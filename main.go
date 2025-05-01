@@ -5,5 +5,5 @@ import (
 )
 
 func main() {
-	huffman.Encode("ababababacdddadbaddcbb")
+	huffman.Encode("A_DEAD_DAD_CEDED_A_BAD_BABE_A_BEADED_ABACA_BED")
 }

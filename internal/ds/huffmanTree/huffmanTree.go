@@ -1,13 +1,24 @@
-package btree
+package huffmantree
+
+type NodeValue struct {
+	Chars string
+	Freq  int
+}
 
 type Node struct {
-	Value string
-	Freq  int
+	Value NodeValue
 	Left  *Node
 	Right *Node
 }
 
-func New(value string) *Node {
+func NewValue(chars string, freq int) NodeValue {
+	return NodeValue{
+		Chars: chars,
+		Freq:  freq,
+	}
+}
+
+func NewNode(value NodeValue) *Node {
 	return &Node{
 		Value: value,
 		Left:  nil,
