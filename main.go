@@ -2,10 +2,11 @@ package main
 
 import (
 	"fmt"
+	"os"
+	"strings"
 	"time"
 
 	"github.com/goferwplynie/kompresja/bits/bitutils"
-	fileutils "github.com/goferwplynie/kompresja/fileUtils"
 	"github.com/goferwplynie/kompresja/internal/algorithm/huffman"
 	"github.com/goferwplynie/kompresja/logger"
 )
@@ -22,21 +23,22 @@ func main() {
 }
 
 func compress(filename string, extension string) {
-	file, err := fileutils.ReadFile(filename + "." + extension)
+	file, err := os.ReadFile(filename + "." + extension)
 	if err != nil {
 		logger.Error("cant read file :c")
 		logger.Error(err)
 	}
+	text := string(file)
 	chars := make([]string, 0, len(file))
 
-	for _, b := range file {
-		chars = append(chars, string(b))
+	for _, v := range text {
+		chars = append(chars, string(v))
 	}
 
 	encoded := huffman.Encode(chars)
 	logger.Log(len(encoded))
 	bytes := bitutils.BitStringToBytes(encoded)
-	err = fileutils.SaveToFile(filename+".gofr", bytes)
+	err = os.WriteFile(filename+".gofr", bytes, 0644)
 	if err != nil {
 		logger.Error("cant save to file :c")
 		logger.Error(err)
@@ -50,7 +52,7 @@ func compress(filename string, extension string) {
 }
 
 func decompress(filename string) {
-	data, err := fileutils.ReadFile(filename)
+	data, err := os.ReadFile(filename)
 	if err != nil {
 		logger.Error(err)
 		logger.Error(":c")
@@ -61,11 +63,7 @@ func decompress(filename string) {
 	chars := huffman.Decode(data)
 	logger.Log(chars)
 
-	str := ""
+	str := strings.Join(chars, "")
 
-	for _, v := range chars {
-		str += v
-	}
-
-	fileutils.SaveToFile("decompressed.txt", []byte(str))
+	os.WriteFile("decompressed.txt", []byte(str), 0644)
 }
