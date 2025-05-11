@@ -12,16 +12,31 @@ import (
 
 func main() {
 	start := time.Now()
-	chars := make([]string, 0)
-	str := "A_DEAD_DAD_CEDED_A_BAD_BABE_A_BEADED_ABACA_BED\n"
+	compress("test", "txt")
+	logger.Cute(time.Since(start))
 
-	for _, r := range str {
-		chars = append(chars, string(r))
+	logger.Cute("decompression")
+	start = time.Now()
+	decompress("test.gofr")
+	logger.Cute(time.Since(start))
+}
+
+func compress(filename string, extension string) {
+	file, err := fileutils.ReadFile(filename + "." + extension)
+	if err != nil {
+		logger.Error("cant read file :c")
+		logger.Error(err)
 	}
+	chars := make([]string, 0, len(file))
+
+	for _, b := range file {
+		chars = append(chars, string(b))
+	}
+
 	encoded := huffman.Encode(chars)
 	logger.Log(len(encoded))
 	bytes := bitutils.BitStringToBytes(encoded)
-	err := fileutils.SaveToFile("gofr.gofr", bytes)
+	err = fileutils.SaveToFile(filename+".gofr", bytes)
 	if err != nil {
 		logger.Error("cant save to file :c")
 		logger.Error(err)
@@ -29,17 +44,28 @@ func main() {
 
 	logger.Log(encoded)
 
-	logger.Cute(fmt.Sprintf("original: %vB", len(str)))
+	logger.Cute(fmt.Sprintf("original: %vB", len(file)))
 	logger.Cute(fmt.Sprintf("compressed: %vB", len(encoded)/8))
 
-	logger.Cute(time.Since(start))
+}
 
-	logger.Cute("decompression")
-	start = time.Now()
-	bytes, err = fileutils.ReadFile("gofr.gofr")
+func decompress(filename string) {
+	data, err := fileutils.ReadFile(filename)
 	if err != nil {
-		logger.Error("cant read file :c")
 		logger.Error(err)
+		logger.Error(":c")
+		return
 	}
-	bitString := bitutils.BytesToBitString(bytes)
+
+	//using slice for later MTF
+	chars := huffman.Decode(data)
+	logger.Log(chars)
+
+	str := ""
+
+	for _, v := range chars {
+		str += v
+	}
+
+	fileutils.SaveToFile("decompressed.txt", []byte(str))
 }

@@ -11,10 +11,14 @@ type Node struct {
 	Right *Node
 }
 
-func NewValue(chars string, freq int) NodeValue {
+func NewValue(chars string, freq ...int) NodeValue {
+	var frequency int
+	if len(freq) > 0 {
+		frequency = freq[0]
+	}
 	return NodeValue{
 		Chars: chars,
-		Freq:  freq,
+		Freq:  frequency,
 	}
 }
 
