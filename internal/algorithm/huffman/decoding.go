@@ -3,7 +3,6 @@ package huffman
 import (
 	"fmt"
 
-	"github.com/goferwplynie/kompresja/bits/bitutils"
 	huffmantree "github.com/goferwplynie/kompresja/internal/ds/huffmanTree"
 	"github.com/goferwplynie/kompresja/logger"
 	"github.com/goferwplynie/kompresja/models"

@@ -6,7 +6,6 @@ import (
 	"strings"
 	"time"
 
-	"github.com/goferwplynie/kompresja/bits/bitutils"
 	"github.com/goferwplynie/kompresja/internal/algorithm/huffman"
 	"github.com/goferwplynie/kompresja/logger"
 )
@@ -59,7 +58,6 @@ func decompress(filename string) {
 		return
 	}
 
-	//using slice for later MTF
 	chars := huffman.Decode(data)
 	logger.Log(chars)
 

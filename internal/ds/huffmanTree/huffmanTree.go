@@ -1,7 +1,7 @@
 package huffmantree
 
 type NodeValue struct {
-	Chars string
+	Bytes []byte
 	Freq  int
 }
 
@@ -11,13 +11,13 @@ type Node struct {
 	Right *Node
 }
 
-func NewValue(chars string, freq ...int) NodeValue {
+func NewValue(bytes []byte, freq ...int) NodeValue {
 	var frequency int
 	if len(freq) > 0 {
 		frequency = freq[0]
 	}
 	return NodeValue{
-		Chars: chars,
+		Bytes: bytes,
 		Freq:  frequency,
 	}
 }
