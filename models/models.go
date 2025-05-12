@@ -2,8 +2,8 @@ package models
 
 type FileMetadata struct {
 	BwtIndex    uint32
-	Padding     byte
-	TreeSize    uint32
-	TreePadding byte
+	Padding     uint8
+	TreeSize    uint16
+	TreePadding uint8
 	Tree        string
 }

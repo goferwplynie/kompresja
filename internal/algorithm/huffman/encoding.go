@@ -26,7 +26,7 @@ func Encode(bytes []byte) []byte {
 	nodes := MakeNodes(bytes)
 	tree := buildTree(nodes)
 
-	codes := make(map[byte]string)
+	codes := make(map[byte][]bool)
 
 	makeCodes(codes, tree)
 	logger.Cute(codes)
@@ -41,25 +41,26 @@ func Encode(bytes []byte) []byte {
 	return bb.Bytes
 }
 
-func addMetaData(bitBuffer *bitbuffer.BitBuffer, tree *huffmantree.Node) *bitbuffer.BitBuffer {
+func addMetaData(bitBuffer *bitbuffer.BitBuffer, tree *huffmantree.Node) {
 	logger.Cute("adding metadata")
 	meta := bitbuffer.New()
 
 	padding := 8 - bitBuffer.CurrentBit
 	bitBuffer.Finalize()
 
-	treeBuffer := treeToBits(tree, bitbuffer.New())
+	treeBuffer := bitbuffer.New()
+
+	treeToBits(tree, treeBuffer)
+
 	treePadding := 8 - treeBuffer.CurrentBit
 	treeBuffer.Finalize()
 
 	treeSize := len(treeBuffer.Bytes)
-
-	meta.AddByte(byte(padding))
-	meta.AddByte(byte(treePadding))
-
 	treeSizeB := binary.BigEndian.AppendUint16(make([]byte, 2), uint16(treeSize))
 
+	meta.AddByte(byte(padding))
 	meta.AddBytes(treeSizeB)
+	meta.AddByte(byte(treePadding))
 
 	meta.MergeRight(treeBuffer)
 	bitBuffer.MergeLeft(meta)
@@ -68,22 +69,18 @@ func addMetaData(bitBuffer *bitbuffer.BitBuffer, tree *huffmantree.Node) *bitbuf
 	logger.Warn(fmt.Sprintf("tree padding: %v", treePadding))
 	logger.Warn(fmt.Sprintf("tree size: %vB", treeSize))
 	logger.Log(fmt.Sprintf("serialized tree: %v", treeBuffer.Bytes))
-
-	return bitBuffer
 }
 
-func treeToBits(node *huffmantree.Node, bitBuffer *bitbuffer.BitBuffer) *bitbuffer.BitBuffer {
+func treeToBits(node *huffmantree.Node, bitBuffer *bitbuffer.BitBuffer) {
 	if node.IsLast() {
 		Byte := byte(node.Value.Bytes[0])
 		bitBuffer.AddBit(true)
 		bitBuffer.AddByte(Byte)
 	} else {
 		bitBuffer.AddBit(false)
-		bitBuffer = treeToBits(node.Left, bitBuffer)
-		bitBuffer = treeToBits(node.Right, bitBuffer)
+		treeToBits(node.Left, bitBuffer)
+		treeToBits(node.Right, bitBuffer)
 	}
-
-	return bitBuffer
 }
 
 func MakeNodes(bytes []byte) []*huffmantree.Node {
@@ -91,8 +88,8 @@ func MakeNodes(bytes []byte) []*huffmantree.Node {
 	var frequencies = make(map[byte]int)
 
 	logger.Cute("calculating frequencies")
-	for _, r := range bytes {
-		frequencies[r]++
+	for _, b := range bytes {
+		frequencies[b]++
 	}
 
 	logger.Cute("creating nodes")
@@ -140,9 +137,9 @@ func buildTree(nodes []*huffmantree.Node) *huffmantree.Node {
 	return nodes[0]
 }
 
-func makeCodes(codes map[byte]string,
-	node *huffmantree.Node, currentCode ...string) {
-	code := ""
+func makeCodes(codes map[byte][]bool,
+	node *huffmantree.Node, currentCode ...[]bool) {
+	code := make([]bool, 0)
 	if len(currentCode) > 0 {
 		code = currentCode[0]
 	} else {
@@ -154,6 +151,6 @@ func makeCodes(codes map[byte]string,
 		return
 	}
 
-	makeCodes(codes, node.Left, code+"0")
-	makeCodes(codes, node.Right, code+"1")
+	makeCodes(codes, node.Left, append(code, false))
+	makeCodes(codes, node.Right, append(code, true))
 }

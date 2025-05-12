@@ -1,16 +1,18 @@
 package huffman
 
 import (
+	"encoding/binary"
 	"fmt"
 
+	"github.com/goferwplynie/kompresja/bits/bitbuffer"
 	huffmantree "github.com/goferwplynie/kompresja/internal/ds/huffmanTree"
 	"github.com/goferwplynie/kompresja/logger"
 	"github.com/goferwplynie/kompresja/models"
 )
 
-func Decode(b []byte) []string {
-	var chars []string
-	var codes = make(map[string]string)
+func Decode(b []byte) []byte {
+	var bytes []byte
+	var codes = make(map[string]byte)
 	metadata, data := extractData(b)
 	tree, _ := rebuildTree(metadata.Tree)
 	printTree(tree)
@@ -23,15 +25,15 @@ func Decode(b []byte) []string {
 		currentCode += string(v)
 		val, exists := codes[currentCode]
 		if exists {
-			chars = append(chars, val)
+			bytes = append(bytes, val)
 			currentCode = ""
 		}
 	}
 
-	return chars
+	return bytes
 }
 
-func makeCodesReversed(codes map[string]string,
+func makeCodesReversed(codes map[string]byte,
 	node *huffmantree.Node, currentCode ...string) {
 	code := ""
 	if len(currentCode) > 0 {
@@ -50,23 +52,24 @@ func makeCodesReversed(codes map[string]string,
 	makeCodesReversed(codes, node.Right, code+"1")
 }
 
-func extractData(b []byte) (metadata models.FileMetadata, data string) {
+func extractData(b []byte) (metadata models.FileMetadata, data *bitbuffer.BitBuffer) {
 	byteCount := 0
 
 	metadata.Padding = b[byteCount]
 	byteCount += 1
 
-	metadata.TreeSize = uint32(b[byteCount])
-	byteCount += 1
+	metadata.TreeSize = binary.BigEndian.Uint16(b[byteCount : byteCount+1])
+	byteCount += 2
 
 	metadata.TreePadding = b[byteCount]
 	byteCount += 1
 
 	logger.Warn(metadata.TreePadding)
 
-	metadata.Tree = bitutils.BytesToBitString(b[byteCount : byteCount+int(metadata.TreeSize)])
-	metadata.Tree = metadata.Tree[:len(metadata.Tree)-int(metadata.TreePadding)]
-	byteCount += int(metadata.TreeSize)
+	treeBytes := b[byteCount : byteCount+int(metadata.TreeSize)]
+	metadata.Tree = bitbuffer.New(treeBytes)
+
+	byteCount += len(metadata.Tree.Bytes)
 
 	data = bitutils.BytesToBitString(b[byteCount:])
 	data = data[:len(data)-int(metadata.Padding)]

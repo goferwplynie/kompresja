@@ -46,9 +46,9 @@ func (bb *BitBuffer) Finalize() {
 	}
 }
 
-func (bb *BitBuffer) AddBits(bitstring string) {
-	for _, r := range bitstring {
-		bb.AddBit(r == '1')
+func (bb *BitBuffer) AddBits(bytes []bool) {
+	for _, b := range bytes {
+		bb.AddBit(b)
 	}
 }
 
