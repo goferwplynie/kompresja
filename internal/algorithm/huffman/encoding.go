@@ -45,14 +45,14 @@ func addMetaData(bitBuffer *bitbuffer.BitBuffer, tree *huffmantree.Node) {
 	logger.Cute("adding metadata")
 	meta := bitbuffer.New()
 
-	padding := 8 - bitBuffer.CurrentBit
+	padding := (8 - bitBuffer.CurrentBit) % 8
 	bitBuffer.Finalize()
 
 	treeBuffer := bitbuffer.New()
 
 	treeToBits(tree, treeBuffer)
 
-	treePadding := 8 - treeBuffer.CurrentBit
+	treePadding := (8 - treeBuffer.CurrentBit) % 8
 	treeBuffer.Finalize()
 
 	treeSize := len(treeBuffer.Bytes)
@@ -64,6 +64,8 @@ func addMetaData(bitBuffer *bitbuffer.BitBuffer, tree *huffmantree.Node) {
 
 	meta.MergeRight(treeBuffer)
 	bitBuffer.MergeLeft(meta)
+
+	//[padding][tree size][tree padding][tree][data]
 
 	logger.Warn(fmt.Sprintf("padding: %v", padding))
 	logger.Warn(fmt.Sprintf("tree padding: %v", treePadding))
