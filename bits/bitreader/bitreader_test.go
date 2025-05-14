@@ -10,3 +10,11 @@ func TestReadByte(t *testing.T) {
 		t.Errorf("wanted %v but got %v", 8, b)
 	}
 }
+
+func TestReadBit(t *testing.T) {
+	br := New([]byte{128})
+
+	if !br.Next() {
+		t.Error("expected true got false")
+	}
+}

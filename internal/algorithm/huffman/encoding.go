@@ -51,12 +51,14 @@ func addMetaData(bitBuffer *bitbuffer.BitBuffer, tree *huffmantree.Node) {
 	treeBuffer := bitbuffer.New()
 
 	treeToBits(tree, treeBuffer)
+	logger.Cute(len(treeBuffer.Bytes))
 
 	treePadding := (8 - treeBuffer.CurrentBit) % 8
 	treeBuffer.Finalize()
 
 	treeSize := len(treeBuffer.Bytes)
-	treeSizeB := binary.BigEndian.AppendUint16(make([]byte, 2), uint16(treeSize))
+	treeSizeB := binary.BigEndian.AppendUint16(make([]byte, 0, 2), uint16(treeSize))
+	logger.Cute(treeSizeB)
 
 	meta.AddByte(byte(padding))
 	meta.AddBytes(treeSizeB)
@@ -70,6 +72,7 @@ func addMetaData(bitBuffer *bitbuffer.BitBuffer, tree *huffmantree.Node) {
 	logger.Warn(fmt.Sprintf("padding: %v", padding))
 	logger.Warn(fmt.Sprintf("tree padding: %v", treePadding))
 	logger.Warn(fmt.Sprintf("tree size: %vB", treeSize))
+	logger.Warn(fmt.Sprintf("metadata size: %vB", len(meta.Bytes)))
 	logger.Log(fmt.Sprintf("serialized tree: %v", treeBuffer.Bytes))
 }
 
@@ -78,6 +81,11 @@ func treeToBits(node *huffmantree.Node, bitBuffer *bitbuffer.BitBuffer) {
 		Byte := byte(node.Value.Bytes[0])
 		bitBuffer.AddBit(true)
 		bitBuffer.AddByte(Byte)
+
+		logger.Log("leaf node:")
+		logger.Log(fmt.Sprintf("value: %08b", Byte))
+		logger.Log(bitBuffer.Bytes)
+		logger.Log(bitBuffer.Buffer)
 	} else {
 		bitBuffer.AddBit(false)
 		treeToBits(node.Left, bitBuffer)
@@ -148,11 +156,21 @@ func makeCodes(codes map[byte][]bool,
 		logger.Cute("making codes")
 
 	}
+
 	if node.IsLast() {
 		codes[node.Value.Bytes[0]] = code
 		return
 	}
 
-	makeCodes(codes, node.Left, append(code, false))
-	makeCodes(codes, node.Right, append(code, true))
+	leftCode := make([]bool, len(code)+1)
+	copy(leftCode, code)
+	leftCode[len(code)] = false
+
+	rightCode := make([]bool, len(code)+1)
+	copy(rightCode, code)
+	rightCode[len(code)] = true
+
+	makeCodes(codes, node.Left, leftCode)
+	makeCodes(codes, node.Right, rightCode)
+
 }

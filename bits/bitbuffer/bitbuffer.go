@@ -71,7 +71,7 @@ func (bb *BitBuffer) AddByte(b byte) {
 		bb.Buffer = b
 		bb.Flush()
 	} else {
-		for i := 7; i > 0; i-- {
+		for i := 7; i >= 0; i-- {
 			bb.AddBit(b>>i&1 == 1)
 		}
 	}
