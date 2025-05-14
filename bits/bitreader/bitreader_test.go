@@ -14,7 +14,9 @@ func TestReadByte(t *testing.T) {
 func TestReadBit(t *testing.T) {
 	br := New([]byte{128})
 
-	if !br.Next() {
+	b, _ := br.Next()
+
+	if !b {
 		t.Error("expected true got false")
 	}
 }

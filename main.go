@@ -6,12 +6,13 @@ import (
 	"time"
 
 	"github.com/goferwplynie/kompresja/internal/algorithm/huffman"
+	"github.com/goferwplynie/kompresja/internal/algorithm/mtf"
 	"github.com/goferwplynie/kompresja/logger"
 )
 
 func main() {
 	start := time.Now()
-	compress("test", "txt")
+	compress("test", "json")
 	logger.Cute(time.Since(start))
 
 	logger.Cute("decompression")
@@ -22,7 +23,9 @@ func main() {
 
 func compress(filename string, extension string) {
 	data, _ := os.ReadFile(filename + "." + extension)
-	b := huffman.Encode(data)
+	fmt.Printf("data: %v\n", data)
+	b := mtf.Encode(data)
+	b = huffman.Encode(data)
 	os.WriteFile(filename+".gofr", b, 0644)
 
 	logger.Cute(fmt.Sprintf("original: %dB\ncompressed: %dB", len(data), len(b)))
@@ -31,5 +34,6 @@ func compress(filename string, extension string) {
 func decompress(filename string) {
 	data, _ := os.ReadFile(filename)
 	b := huffman.Decode(data)
+	b = mtf.Decode(b)
 	logger.Cute(string(b))
 }

@@ -15,7 +15,7 @@ func Decode(b []byte) []byte {
 	var bytes []byte
 	metadata, data := extractData(b)
 	root := rebuildTree(bitreader.New(metadata.Tree.Bytes))
-	printTree(root)
+	//printTree(root)
 
 	br := bitreader.New(data.Bytes)
 	currentNode := root

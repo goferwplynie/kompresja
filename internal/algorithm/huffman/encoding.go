@@ -30,7 +30,7 @@ func Encode(bytes []byte) []byte {
 
 	makeCodes(codes, tree)
 	logger.Cute(codes)
-	printTree(tree)
+	//printTree(tree)
 
 	for _, b := range bytes {
 		bb.AddBits(codes[b])
@@ -81,11 +81,6 @@ func treeToBits(node *huffmantree.Node, bitBuffer *bitbuffer.BitBuffer) {
 		Byte := byte(node.Value.Bytes[0])
 		bitBuffer.AddBit(true)
 		bitBuffer.AddByte(Byte)
-
-		logger.Log("leaf node:")
-		logger.Log(fmt.Sprintf("value: %08b", Byte))
-		logger.Log(bitBuffer.Bytes)
-		logger.Log(bitBuffer.Buffer)
 	} else {
 		bitBuffer.AddBit(false)
 		treeToBits(node.Left, bitBuffer)

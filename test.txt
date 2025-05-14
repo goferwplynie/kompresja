@@ -1,3 +1,0 @@
-“quoted text” (enclosed in curly quotes)
-— (em dash)
-ñ (Spanish character)
