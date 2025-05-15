@@ -13,7 +13,7 @@ func Decode(b []byte) []byte {
 	for _, v := range b {
 		symbol := available[v]
 		index := search(symbol, available)
-		result = append(result, v)
+		result = append(result, symbol)
 		available = moveToFront(index, available)
 	}
 	fmt.Printf("available: %v\n", available)
