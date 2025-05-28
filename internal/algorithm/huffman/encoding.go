@@ -4,8 +4,6 @@ import (
 	"fmt"
 	"sort"
 
-	"encoding/binary"
-
 	"github.com/goferwplynie/kompresja/bits/bitbuffer"
 	huffmantree "github.com/goferwplynie/kompresja/internal/ds/huffmanTree"
 	"github.com/goferwplynie/kompresja/logger"
@@ -20,7 +18,7 @@ func printTree(tree *huffmantree.Node) {
 	printTree(tree.Right)
 }
 
-func Encode(bytes []byte) []byte {
+func Encode(bytes []byte) (*bitbuffer.BitBuffer, *bitbuffer.BitBuffer) {
 	bb := bitbuffer.New()
 
 	nodes := MakeNodes(bytes)
@@ -36,44 +34,11 @@ func Encode(bytes []byte) []byte {
 		bb.AddBits(codes[b])
 	}
 
-	addMetaData(bb, tree)
-
-	return bb.Bytes
-}
-
-func addMetaData(bitBuffer *bitbuffer.BitBuffer, tree *huffmantree.Node) {
-	logger.Cute("adding metadata")
-	meta := bitbuffer.New()
-
-	padding := (8 - bitBuffer.CurrentBit) % 8
-	bitBuffer.Finalize()
-
+	fmt.Printf("bytes: %v\n", bytes)
 	treeBuffer := bitbuffer.New()
-
 	treeToBits(tree, treeBuffer)
-	logger.Cute(len(treeBuffer.Bytes))
 
-	treePadding := (8 - treeBuffer.CurrentBit) % 8
-	treeBuffer.Finalize()
-
-	treeSize := len(treeBuffer.Bytes)
-	treeSizeB := binary.BigEndian.AppendUint16(make([]byte, 0, 2), uint16(treeSize))
-	logger.Cute(treeSizeB)
-
-	meta.AddByte(byte(padding))
-	meta.AddBytes(treeSizeB)
-	meta.AddByte(byte(treePadding))
-
-	meta.MergeRight(treeBuffer)
-	bitBuffer.MergeLeft(meta)
-
-	//[padding][tree size][tree padding][tree][data]
-
-	logger.Warn(fmt.Sprintf("padding: %v", padding))
-	logger.Warn(fmt.Sprintf("tree padding: %v", treePadding))
-	logger.Warn(fmt.Sprintf("tree size: %vB", treeSize))
-	logger.Warn(fmt.Sprintf("metadata size: %vB", len(meta.Bytes)))
-	logger.Log(fmt.Sprintf("serialized tree: %v", treeBuffer.Bytes))
+	return bb, treeBuffer
 }
 
 func treeToBits(node *huffmantree.Node, bitBuffer *bitbuffer.BitBuffer) {

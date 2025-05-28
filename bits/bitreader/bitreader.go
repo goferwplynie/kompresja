@@ -6,18 +6,20 @@ type BitReader struct {
 	Buff        []byte
 	CurrentByte int
 	BitPos      uint8
+	MaxBits     int
 }
 
-func New(b []byte) *BitReader {
+func New(b []byte, maxBits int) *BitReader {
 	return &BitReader{
 		Buff:        b,
 		CurrentByte: 0,
 		BitPos:      0,
+		MaxBits:     maxBits,
 	}
 }
 
 func (br *BitReader) Next() (bool, error) {
-	if br.CurrentByte >= len(br.Buff) {
+	if br.CurrentByte*8+int(br.BitPos) >= br.MaxBits {
 		return false, errors.New("EOF")
 	}
 

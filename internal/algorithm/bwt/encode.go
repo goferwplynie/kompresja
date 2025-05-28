@@ -2,43 +2,35 @@ package bwt
 
 import (
 	"bytes"
-	"slices"
 	"sort"
 )
 
 func Encode(b []byte) ([]byte, int) {
-	rotations := make([][]byte, 0, len(b))
-	rotation := b
-	result := make([]byte, 0, len(b))
-	var bwtIndex int
+	n := len(b)
+	rotations := make([][]byte, 0, n)
 
-	rotations = append(rotations, rotation)
+	original := make([]byte, n)
+	copy(original, b)
 
-	for range b {
-		freeRotation := make([]byte, len(b))
-		copy(freeRotation, rotation)
-		freeRotation = nextRotation(freeRotation)
-		rotations = append(rotations, freeRotation)
-		rotation = freeRotation
+	rotation := make([]byte, n)
+	copy(rotation, b)
+	for range n {
+		rotations = append(rotations, append([]byte{}, rotation...))
+		rotation = append(rotation[1:], rotation[0])
 	}
 
 	sort.Slice(rotations, func(i, j int) bool {
-		return rotations[i][0] < rotations[j][0]
+		return bytes.Compare(rotations[i], rotations[j]) < 0
 	})
 
-	for i, v := range rotations {
-		if bytes.Equal(b, v) {
+	result := make([]byte, n)
+	var bwtIndex int
+	for i, rot := range rotations {
+		result[i] = rot[n-1]
+		if bytes.Equal(rot, original) {
 			bwtIndex = i
 		}
-		result = append(result, v[len(v)-1])
 	}
 
 	return result, bwtIndex
-
-}
-
-func nextRotation(b []byte) []byte {
-	by := b[0]
-	b = slices.Delete(b, 0, 1)
-	return append(b, by)
 }

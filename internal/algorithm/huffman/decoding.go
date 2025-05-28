@@ -14,10 +14,10 @@ import (
 func Decode(b []byte) []byte {
 	var bytes []byte
 	metadata, data := extractData(b)
-	root := rebuildTree(bitreader.New(metadata.Tree.Bytes))
+	root := rebuildTree(bitreader.New(metadata.Tree.Bytes, len(metadata.Tree.Bytes)*8))
 	//printTree(root)
 
-	br := bitreader.New(data.Bytes)
+	br := bitreader.New(data.Bytes, len(data.Bytes)*8-int(metadata.Padding))
 	currentNode := root
 
 	for {
@@ -37,6 +37,7 @@ func Decode(b []byte) []byte {
 		}
 
 	}
+	fmt.Printf("bytes: %v\n", bytes)
 
 	return bytes
 }
