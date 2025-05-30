@@ -1,35 +1,36 @@
 package bwt
 
 import (
-	"bytes"
 	"sort"
 )
 
-func Encode(b []byte) ([]byte, int) {
-	n := len(b)
-	rotations := make([][]byte, 0, n)
-
-	original := make([]byte, n)
-	copy(original, b)
-
-	rotation := make([]byte, n)
-	copy(rotation, b)
-	for range n {
-		rotations = append(rotations, append([]byte{}, rotation...))
-		rotation = append(rotation[1:], rotation[0])
+func Encode(data []byte) ([]byte, int) {
+	n := len(data)
+	indices := make([]int, n)
+	for i := range indices {
+		indices[i] = i
 	}
 
-	sort.Slice(rotations, func(i, j int) bool {
-		return bytes.Compare(rotations[i], rotations[j]) < 0
+	sort.Slice(indices, func(i, j int) bool {
+		a, b := indices[i], indices[j]
+
+		for k := range n {
+			ac := data[(a+k)%n]
+			bc := data[(b+k)%n]
+			if ac != bc {
+				return ac < bc
+			}
+		}
+		return false
 	})
 
 	result := make([]byte, n)
 	var bwtIndex int
-	for i, rot := range rotations {
-		result[i] = rot[n-1]
-		if bytes.Equal(rot, original) {
+	for i, idx := range indices {
+		if idx == 0 {
 			bwtIndex = i
 		}
+		result[i] = data[(idx+n-1)%n]
 	}
 
 	return result, bwtIndex

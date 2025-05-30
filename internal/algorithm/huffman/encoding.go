@@ -1,7 +1,6 @@
 package huffman
 
 import (
-	"fmt"
 	"sort"
 
 	"github.com/goferwplynie/kompresja/bits/bitbuffer"
@@ -27,14 +26,12 @@ func Encode(bytes []byte) (*bitbuffer.BitBuffer, *bitbuffer.BitBuffer) {
 	codes := make(map[byte][]bool)
 
 	makeCodes(codes, tree)
-	logger.Cute(codes)
 	//printTree(tree)
 
 	for _, b := range bytes {
 		bb.AddBits(codes[b])
 	}
 
-	fmt.Printf("bytes: %v\n", bytes)
 	treeBuffer := bitbuffer.New()
 	treeToBits(tree, treeBuffer)
 
@@ -57,12 +54,10 @@ func MakeNodes(bytes []byte) []*huffmantree.Node {
 	var nodes = make([]*huffmantree.Node, 0)
 	var frequencies = make(map[byte]int)
 
-	logger.Cute("calculating frequencies")
 	for _, b := range bytes {
 		frequencies[b]++
 	}
 
-	logger.Cute("creating nodes")
 	for key, value := range frequencies {
 		nodes = append(nodes, huffmantree.NewNode(
 			huffmantree.NewValue([]byte{key}, value)))
@@ -72,7 +67,6 @@ func MakeNodes(bytes []byte) []*huffmantree.Node {
 }
 
 func sortNodes(nodes []*huffmantree.Node) {
-	logger.Log("sorting nodes")
 	sort.Slice(nodes, func(i, j int) bool {
 		return nodes[i].Value.Freq < nodes[j].Value.Freq
 	})
@@ -86,7 +80,6 @@ func mergeValues(value1, value2 huffmantree.NodeValue) huffmantree.NodeValue {
 }
 
 func buildTree(nodes []*huffmantree.Node) *huffmantree.Node {
-	logger.Cute("making tree")
 	for len(nodes) > 1 {
 		sortNodes(nodes)
 
@@ -112,9 +105,6 @@ func makeCodes(codes map[byte][]bool,
 	code := make([]bool, 0)
 	if len(currentCode) > 0 {
 		code = currentCode[0]
-	} else {
-		logger.Cute("making codes")
-
 	}
 
 	if node.IsLast() {
