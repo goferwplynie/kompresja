@@ -20,6 +20,7 @@ type WorkerPool interface {
 type workerPool struct {
 	maxWorker   int
 	queuedTaskC chan archive.File
+	wg          sync.WaitGroup
 }
 
 func New(maxWorkers int) *workerPool {
@@ -30,16 +31,15 @@ func New(maxWorkers int) *workerPool {
 }
 
 func (wp *workerPool) Run(dest string) {
-	var wg sync.WaitGroup
 	for i := range wp.maxWorker {
-		wg.Add(1)
+		wp.wg.Add(1)
 		go func(workerID int) {
-			defer wg.Done()
+			defer wp.wg.Done()
 			for file := range wp.queuedTaskC {
 				b := compression.Compress(file)
 				bb := bitbuffer.New(b)
 				addMeta(bb, file)
-				logger.Cute(fmt.Sprintf("file: %v compressed size: %v", file.Path, len(bb.Bytes)))
+				logger.Cute(fmt.Sprintf("file: %v", file.Path))
 				f, err := os.OpenFile(dest, os.O_APPEND|os.O_CREATE|os.O_WRONLY, 0644)
 				if err != nil {
 					logger.Error(err)
@@ -53,7 +53,6 @@ func (wp *workerPool) Run(dest string) {
 			}
 		}(i + 1)
 	}
-	wg.Wait()
 }
 
 func (wp *workerPool) AddTask(file archive.File) {
@@ -62,6 +61,10 @@ func (wp *workerPool) AddTask(file archive.File) {
 
 func (wp *workerPool) Close() {
 	close(wp.queuedTaskC)
+}
+
+func (wp *workerPool) Wait() {
+	wp.wg.Wait()
 }
 
 func addMeta(bb *bitbuffer.BitBuffer, file archive.File) {

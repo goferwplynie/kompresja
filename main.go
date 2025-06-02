@@ -2,7 +2,6 @@ package main
 
 import (
 	"encoding/binary"
-	"fmt"
 	"io"
 	"io/fs"
 	"math"
@@ -41,12 +40,14 @@ func compress(path string, dest string) {
 
 	filepath.WalkDir(path, func(path string, d fs.DirEntry, err error) error {
 		if err != nil {
+			logger.Error(err)
 			return err
 		}
 
 		if !d.IsDir() {
 			info, _ := d.Info()
 			if info.Size() > partSize {
+				//logger.Cute(path)
 				parts := math.Ceil(float64(info.Size()) / partSize)
 				for i := range int(parts) {
 					wp.AddTask(archive.NewFile(path, i))
@@ -58,6 +59,7 @@ func compress(path string, dest string) {
 		return nil
 	})
 	wp.Close()
+	wp.Wait()
 
 }
 
@@ -125,7 +127,6 @@ func decompress(filename string) {
 			Start:    offset,
 		})
 		offset += uint(fileSize)
-		fmt.Printf("offset: %v\n", offset)
 		if offset >= uint(compressedFInfo.Size()) {
 			break
 		}

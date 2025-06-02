@@ -9,3 +9,11 @@ type FileMetadata struct {
 	TreePadding uint8
 	Tree        *bitbuffer.BitBuffer
 }
+
+type ArchiveMetaData struct {
+	PathLen  uint16
+	Path     string
+	FileSize uint64
+	Part     uint32
+	Start    uint
+}
