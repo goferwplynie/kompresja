@@ -2,40 +2,72 @@ package main
 
 import (
 	"encoding/binary"
+	"flag"
 	"io"
 	"io/fs"
 	"math"
 	"os"
 	"path/filepath"
+	"regexp"
+	"strings"
 	"time"
 
 	"github.com/goferwplynie/kompresja/archive"
 	"github.com/goferwplynie/kompresja/compression"
 	"github.com/goferwplynie/kompresja/models"
 
-	//"github.com/goferwplynie/kompresja/compression"
 	"github.com/goferwplynie/kompresja/logger"
 	"github.com/goferwplynie/kompresja/workerpool"
 )
 
 const partSize = 100 * 1024 * 1024
 
-func main() {
-	start := time.Now()
-	//compress("../kompresja2", "../kompresja2.gofr")
-	logger.Cute(time.Since(start))
+var regexFilter *regexp.Regexp
 
-	logger.Cute("decompression")
-	start = time.Now()
-	//compression.Decompress("test.gofr")
-	decompress("../kompresja2.gofr")
-	logger.Cute(time.Since(start))
+func main() {
+	args := os.Args
+	if len(args) > 1 {
+		switch args[1] {
+		case "compress":
+			start := time.Now()
+			compress(args)
+			logger.Cute(time.Since(start))
+		case "decompress":
+			start := time.Now()
+			decompress(args)
+			logger.Cute(time.Since(start))
+		}
+	}
 }
 
-func compress(path string, dest string) {
+func compress(args []string) {
+	if len(args) < 4 {
+		logger.Error("not enough arguments provided")
+		logger.Cute("Expected: go run main.go compress <path to compress> <compressed name>")
+		return
+	}
+	path := args[2]
+	path, _ = filepath.Abs(path)
+	dest := args[3]
+
+	flagSet := flag.NewFlagSet("compress", flag.ExitOnError)
+	ignoreHidden := flagSet.Bool("ih", false, "ignore hidden")
+	regex := flagSet.String("i", "", "ignore by regex")
+
+	flagSet.Parse(args[4:])
+
+	if *regex != "" {
+		var err error
+		regexFilter, err = regexp.Compile(*regex)
+		if err != nil {
+			logger.Error(err)
+			return
+		}
+	}
+
 	os.Create(dest)
 
-	wp := workerpool.New(20)
+	wp := workerpool.New(25)
 	go wp.Run(dest)
 
 	filepath.WalkDir(path, func(path string, d fs.DirEntry, err error) error {
@@ -43,17 +75,25 @@ func compress(path string, dest string) {
 			logger.Error(err)
 			return err
 		}
+		if *ignoreHidden && strings.HasPrefix(d.Name(), ".") {
+			return filepath.SkipDir
+		}
+
+		if matchRegex(d.Name()) {
+			return filepath.SkipDir
+		}
 
 		if !d.IsDir() {
 			info, _ := d.Info()
+			logger.Cute(path)
 			if info.Size() > partSize {
-				//logger.Cute(path)
 				parts := math.Ceil(float64(info.Size()) / partSize)
 				for i := range int(parts) {
 					wp.AddTask(archive.NewFile(path, i))
 				}
+			} else {
+				wp.AddTask(archive.NewFile(path, 0))
 			}
-			wp.AddTask(archive.NewFile(path, 0))
 
 		}
 		return nil
@@ -63,16 +103,33 @@ func compress(path string, dest string) {
 
 }
 
-func decompress(filename string) {
+func matchRegex(name string) bool {
+	if regexFilter != nil {
+		return (*regexFilter).MatchString(name)
+	}
+	return true
+}
+
+func decompress(args []string) {
+	if len(args) < 2 {
+		logger.Error("not enough arguments provided")
+		logger.Cute("Expected: go run main.go decompress <compressed file>")
+		return
+	}
+
+	filename := args[2]
+
 	var err error
 	compressedF, err := os.Open(filename)
 
 	if err != nil {
 		logger.Error(err)
+		return
 	}
 	compressedFInfo, err := compressedF.Stat()
 	if err != nil {
 		logger.Error(err)
+		return
 	}
 
 	defer compressedF.Close()
@@ -139,6 +196,7 @@ func decompress(filename string) {
 		err := os.MkdirAll(dir, 0755)
 		if err != nil {
 			logger.Error(err)
+			return
 		}
 
 		f, err := os.OpenFile(path, os.O_APPEND|os.O_CREATE|os.O_WRONLY, 0644)

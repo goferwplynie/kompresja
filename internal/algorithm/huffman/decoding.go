@@ -1,8 +1,6 @@
 package huffman
 
 import (
-	"fmt"
-
 	"github.com/goferwplynie/kompresja/bits/bitbuffer"
 	"github.com/goferwplynie/kompresja/bits/bitreader"
 	huffmantree "github.com/goferwplynie/kompresja/internal/ds/huffmanTree"
@@ -34,8 +32,6 @@ func Decode(data *bitbuffer.BitBuffer, metadata models.FileMetadata) []byte {
 		}
 
 	}
-	fmt.Printf("bytes: %v\n", bytes)
-
 	return bytes
 }
 
