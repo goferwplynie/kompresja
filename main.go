@@ -9,6 +9,7 @@ import (
 	"os"
 	"path/filepath"
 	"regexp"
+	"sort"
 	"strings"
 	"time"
 
@@ -79,7 +80,7 @@ func compress(args []string) {
 			return filepath.SkipDir
 		}
 
-		if matchRegex(d.Name()) {
+		if matchRegex(d.Name()) && *regex != "" {
 			return filepath.SkipDir
 		}
 
@@ -191,6 +192,10 @@ func decompress(args []string) {
 	logger.Cute(files)
 
 	for path, parts := range files {
+		sort.Slice(parts, func(i, j int) bool {
+			return parts[i].Part < parts[j].Part
+		})
+		logger.Cute(parts)
 		dir := filepath.Dir(path)
 
 		err := os.MkdirAll(dir, 0755)

@@ -2,6 +2,7 @@ package compression
 
 import (
 	"encoding/binary"
+	"math"
 	"os"
 
 	"github.com/goferwplynie/kompresja/archive"
@@ -11,8 +12,27 @@ import (
 	"github.com/goferwplynie/kompresja/internal/algorithm/mtf"
 )
 
+const partSize = 100 * 1024 * 1024
+
 func Compress(file archive.File) []byte {
-	data, _ := os.ReadFile(file.Path)
+	f, err := os.Open(file.Path)
+	if err != nil {
+		panic(err)
+	}
+	defer f.Close()
+
+	fInfo, err := f.Stat()
+	if err != nil {
+		panic(err)
+	}
+	maxParts := math.Ceil(float64(fInfo.Size()) / float64(partSize))
+	size := int64(partSize)
+	if file.Part == int(maxParts-1) {
+		size = fInfo.Size() % partSize
+	}
+
+	data := make([]byte, size)
+	_, err = f.ReadAt(data, int64(file.Part)*partSize)
 
 	b, bwtIndex := bwt.Encode(data)
 	b = mtf.Encode(b)
