@@ -21,7 +21,7 @@ import (
 	"github.com/goferwplynie/kompresja/workerpool"
 )
 
-const partSize = 100 * 1024 * 1024
+const partSize = 10 * 1024 * 1024
 
 var regexFilter *regexp.Regexp
 
@@ -48,7 +48,9 @@ func compress(args []string) {
 		return
 	}
 	path := args[2]
-	path, _ = filepath.Abs(path)
+	wd, _ := os.Getwd()
+	path = wd + string(filepath.Separator) + path
+
 	dest := args[3]
 
 	flagSet := flag.NewFlagSet("compress", flag.ExitOnError)
@@ -68,7 +70,7 @@ func compress(args []string) {
 
 	os.Create(dest)
 
-	wp := workerpool.New(25)
+	wp := workerpool.New(40)
 	go wp.Run(dest)
 
 	filepath.WalkDir(path, func(path string, d fs.DirEntry, err error) error {
@@ -77,7 +79,10 @@ func compress(args []string) {
 			return err
 		}
 		if *ignoreHidden && strings.HasPrefix(d.Name(), ".") {
-			return filepath.SkipDir
+			if d.IsDir() {
+				return filepath.SkipDir
+			}
+			return nil
 		}
 
 		if matchRegex(d.Name()) && *regex != "" {
@@ -86,7 +91,6 @@ func compress(args []string) {
 
 		if !d.IsDir() {
 			info, _ := d.Info()
-			logger.Cute(path)
 			if info.Size() > partSize {
 				parts := math.Ceil(float64(info.Size()) / partSize)
 				for i := range int(parts) {

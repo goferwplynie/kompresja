@@ -12,7 +12,7 @@ import (
 	"github.com/goferwplynie/kompresja/internal/algorithm/mtf"
 )
 
-const partSize = 100 * 1024 * 1024
+const partSize = 10 * 1024 * 1024
 
 func Compress(file archive.File) []byte {
 	f, err := os.Open(file.Path)
